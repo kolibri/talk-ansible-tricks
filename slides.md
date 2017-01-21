@@ -9,7 +9,7 @@ Lukas Sadzik, Software Developer @ Sensiolabs
 
 Automatisation fan (aka lazy guy)
 
-@ko_libri
+[@ko_libri](https://twitter.com/ko_libri)
 
 lukas.sadzik@sensiolabs.de
 
@@ -103,7 +103,7 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 
 *Info*: 
 - For groups of hosts
-
+- [Directory layouts in best pratices guide](http://docs.ansible.com/ansible/playbooks_best_practices.html#directory-layout)
 ------
 # The `ansible-playbook` command
 
@@ -116,7 +116,6 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 - `--syntax-check` linter
 
 ---
-
 ## Configure ansible
 
 - `-i INVENTORY`/`--inventory-file=INVENTORY` specify the inventory file
@@ -156,7 +155,6 @@ ansible-playbook site.yml
 - `-K`/`--ask-become-pass` ask for privilege escalation password. 
 
 ------
-
 # Getting started/Initialize a new host
 
 - Manage your users with ansible.
@@ -210,12 +208,19 @@ $ ansible-playbook site.yml
     token: "{{ github_access_token }}"
 ```
 
+Create tokens at [github.com/settings/tokens](https://github.com/settings/tokens) (activate `write:public_key`)
+
+*Info*:
+- [`github_key` documentation](http://docs.ansible.com/ansible/github_key_module.html)
+
 ------
 # Ansible Galaxy
 
 ```yaml
 # requirements.yml
-- geerlingguy.jenkins
+- galaxy.role_name
+- https://github.com/role/from_github
+  name: as_this_name
 ```
 
 ```ini
@@ -234,6 +239,7 @@ $ ansible-galaxy install -r=requirements.yml -p=galaxy_roles
 
 *Info*:
 - Add galaxy role path to `.gitignore`.
+- [galacy cli docs](http://docs.ansible.com/ansible/galaxy.html#installing-multiple-roles-from-a-file)
 
 ---
 
@@ -264,6 +270,9 @@ $ ansible-galaxy init --init-path=roles/ --offline my_new_role
     └── vars
         └── main.yml
 ```
+
+*Info*:
+[`ansible-galaxy init` in the docs](http://docs.ansible.com/ansible/galaxy.html#create-roles)
 
 ------
 # Variable naming schema
@@ -398,6 +407,7 @@ $ ansible-playbook -K --become site.yml
 
 *Info*:
 Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With this, ansible will ask your for the password to become the other user (Which password may depend on the `become-method`.)
+[`become` in the docs](http://docs.ansible.com/ansible/become.html)
 
 ------
 
@@ -423,6 +433,7 @@ Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With
 *Info*:
 - You can pass arguments, when including roles in your playbook
 - Keep in mind, that you can design roles, that are included more than one time
+- [Roles in the docs](http://docs.ansible.com/ansible/playbooks_roles.html#roles)
 
 ------
 # Role dependencies
@@ -456,6 +467,7 @@ dependencies:
 
 *Info*:
 With this, `myrole` will be executed twice. First time from the playbook, with the tag, second time from the dependency from `myotherrole`, without the tag.
+[Role dependencies in the docs](http://docs.ansible.com/ansible/playbooks_roles.html#role-dependencies)
 
 ------
 # A module to notice
@@ -469,8 +481,14 @@ With this, `myrole` will be executed twice. First time from the playbook, with t
     myrole_var: foobar
 ```
 
+*Info*:
+[`include_role` in the docs](http://docs.ansible.com/ansible/include_role_module.html)
+
 ------
 # Loops
+
+*Info*:
+[Loops in the docs](http://docs.ansible.com/ansible/playbooks_loops.html)
 
 ---
 ## `when` in loops
@@ -526,6 +544,7 @@ Don't use them. Use `include`s instead.
 - the idea of block is, to group tasks and apply some directives at a single point.
 - Blocks can't be looped, what's sad, really sad.
 - Blocks introduce strange, not intuitive conventions, intendention, etcs
+- [Block in the docs](http://docs.ansible.com/ansible/playbooks_blocks.html)
 
 ------
 # Delegating tasks
@@ -540,6 +559,9 @@ Use `delegate_to` to execute the task on another machine than the current.
     line: "{{ ansible_eth1.ipv4.address}} {{ inventory_hostname }}"
   delegate_to: 127.0.0.1
 ```
+
+*Info*:
+[Delegation in the docs](http://docs.ansible.com/ansible/playbooks_delegation.html#delegation)
 
 ------
 # A module to notice
@@ -587,6 +609,7 @@ Use `delegate_to` to execute the task on another machine than the current.
 
 *Info*:
 - Note the `group` option at the `add_host` module. We reuse this groupname at the second play part.
+- [`add_host` in the docs](http://docs.ansible.com/ansible/add_host_module.html)
 
 ------
 # `register`
@@ -612,6 +635,7 @@ Use `delegate_to` to execute the task on another machine than the current.
 
 *Info*:
 A LOT modules provide infos into the `register` directive. Just try it!
+[`register`in the docs](http://docs.ansible.com/ansible/playbooks_variables.html#registered-variables)
 
 ------
 # `set_fact` module
@@ -625,6 +649,9 @@ A LOT modules provide infos into the `register` directive. Just try it!
 - debug: var=some_fact
 - debug: var=a_fact
 ```
+
+*Info*:
+[`set_fact` module in the docs](http://docs.ansible.com/ansible/set_fact_module.html)
 
 ---
 ## Read input from JSON/YAML
@@ -641,6 +668,9 @@ A LOT modules provide infos into the `register` directive. Just try it!
 
 - set_fact: myvar="{{ result.stdout | from_yaml }}"
 ```
+
+*Info*: 
+[`from_yaml`&`from_json` in the docs](http://docs.ansible.com/ansible/playbooks_filters.html#filters-for-formatting-data)
 
 ------
 # A module to notice
@@ -755,7 +785,10 @@ will result in this:
 └── shared
 ```
 
-*Info*: Note, that the `UNFINISHEDFILE` is absent!
+*Info*:
+Note, that the `UNFINISHEDFILE` is absent!
+[`deploy_helper` modul ein the docs](http://docs.ansible.com/ansible/deploy_helper_module.html)
+
 
 ------
 # `run_once` directive
@@ -770,6 +803,7 @@ will result in this:
 
 *Info*: 
 - `run_once`, obvisiosly run every playbook run ;)
+- [`run_once` in the docs](http://docs.ansible.com/ansible/playbooks_delegation.html#run-once)
 
 ------
 # Tip about services and handlers
@@ -798,4 +832,4 @@ will result in this:
 
 *Info*: 
 - Do not forget the `notify`
-
+- [handlers in the docs](http://docs.ansible.com/ansible/playbooks_intro.html#handlers-running-operations-on-change)
