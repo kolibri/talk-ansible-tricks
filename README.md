@@ -2,11 +2,11 @@
 
 ## View slides:
 
-(https://kolibri.github.io/talk-ansible-tricks-tips/)
+[kolibri.github.io/talk-ansible-tricks-tips/](https://kolibri.github.io/talk-ansible-tricks-tips/)
 
 or
 
-(slides.md)
+[slides.md](slides.md)
 
 ## start on local machine (needed for speaker notes):
 
