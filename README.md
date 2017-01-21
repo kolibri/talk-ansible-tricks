@@ -2,7 +2,7 @@
 
 ## View slides:
 
-[kolibri.github.io/talk-ansible-tricks-tips/](https://kolibri.github.io/talk-ansible-tricks-tips/)
+[kolibri.github.io/talk-ansible-tricks/](https://kolibri.github.io/talk-ansible-tricks/)
 
 or
 
