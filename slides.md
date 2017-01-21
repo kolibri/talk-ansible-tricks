@@ -510,7 +510,7 @@ With this, `myrole` will be executed twice. First time from the playbook, with t
 ## Looping dictionaries in Jinja2
 
 ```jinja
-{% for key, item in my_dict.iteritems() %}
+{ % for key, item in my_dict.iteritems() %}
   {{ key }}{{ item }}
 {% endfor %}
 ```
