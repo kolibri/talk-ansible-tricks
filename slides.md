@@ -107,6 +107,7 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 ------
 # The `ansible-playbook` command
 
+---
 ## General useful options
 
 - `--flush-cache` clear the fact cache (KEEP THIS IN MIND!!)
@@ -122,6 +123,7 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 - `-e EXTRA_VARS`/`--extra-vars=EXTRA_VARS` allows you to specify/overwrite variables for the playbook run.
 
 ---
+### `--extra-vars`/`-e` example
 ```yaml
 # site.yml
 - hosts: all
