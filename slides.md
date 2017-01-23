@@ -104,6 +104,7 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 *Info*: 
 - For groups of hosts
 - [Directory layouts in best pratices guide](http://docs.ansible.com/ansible/playbooks_best_practices.html#directory-layout)
+
 ------
 # The `ansible-playbook` command
 
