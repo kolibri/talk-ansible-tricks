@@ -8,7 +8,7 @@ or
 
 [slides.md](slides.md)
 
-## start on local machine (needed for speaker notes):
+## Start on local machine (needed for speaker notes):
 
-`cd into/repo` and `php -S localhost:8000` or something equivalent
+`cd into/repo` and `php -S localhost:8000` or something equivalent.
 

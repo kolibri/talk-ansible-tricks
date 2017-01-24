@@ -2,12 +2,12 @@
 
 ## To keep you rocking!
 
-------
-# Who?
+---
+# Who is this guy?
 
 Lukas Sadzik, Software Developer @ Sensiolabs
 
-Automatisation fan (aka lazy guy)
+Automatization fan (aka "lazy guy")
 
 [@ko_libri](https://twitter.com/ko_libri)
 
@@ -25,9 +25,12 @@ $ sudo pip install paramiko PyYAML Jinja2 httplib2 six
 ```bash
 # clone & source ansible
 $ git clone git://github.com/ansible/ansible.git --recursive
-$ cd ./ansible
-$ source ./hacking/env-setup
 
+# you may add this to your ~/.bashrc
+$ source ./ansible/hacking/env-setup
+```
+
+```bash
 # update
 $ git pull --rebase
 ```
@@ -46,6 +49,28 @@ Just do it!
 # The Inventory
 
 Keep your inventory in your SCM.
+
+*Info*:
+- but keep sensitive data out of the repository ;)
+
+---
+## Use IPs and grouping
+
+```ini
+cid.ko ansible_host=192.168.178.23
+aerith.ko ansible_host=192.168.178.24
+cloud.ko ansible_host=192.168.178.25
+
+[arch]
+cid.ko
+cloud.ko
+
+[arch:vars]
+ansible_python_interpreter=/usr/bin/python2
+```
+
+*Info*:
+- with this you can use `ansible_nodename` you have IP and hostname at one place. You can use `ansible_nodename` to set the hostname and `ansible_default_ipv4.address` for the ip. Think about using this in you local `/etc/hosts`.
 
 ------
 # Directory layout
@@ -156,13 +181,35 @@ ansible-playbook site.yml
 - `-K`/`--ask-become-pass` ask for privilege escalation password. 
 
 ------
+# Use "real" yaml syntax instead of inline style
+
+---
+```yaml
+- name: ensure root privileges for user
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^{{ user_name }} ALL"
+    line: "{{ user_name }} ALL=(ALL) NOPASSWD:ALL"
+    validate: "visudo -cf %s"
+```
+
+*Info*:
+- Is more readable ;)
+- Allows you to add/remove options by lines (git will thank you)
+- Drawback: You have to add `"` around `{{ variables }}`
+- Did you see the `validate`?
+
+------
 # Getting started/Initialize a new host
 
+---
 - Manage your users with ansible.
 - Describe the end-state of your system. 
 - Pass inital related config (setup-user credentials) via commandline on first run
 
 *Info*:
+- Do not have a "init playbook"
 - end-state: includes inventory file, etc.
 - Have the script, that ensures you can run ansible as a part of the usual scripts.
 
@@ -192,9 +239,10 @@ $ ansible-playbook site.yml
 - `-k` (lower "k" is shortcut for `ask-pass`, that will ask for connection password)
 
 ------
-# A module to notice
-## `github_key` module
+# `github_key` module
+## A module to notice
 
+---
 ```yaml
 - name: ensure user and get information
   user:
@@ -217,6 +265,7 @@ Create tokens at [github.com/settings/tokens](https://github.com/settings/tokens
 ------
 # Ansible Galaxy
 
+---
 ```yaml
 # requirements.yml
 - galaxy.role_name
@@ -231,9 +280,11 @@ roles_path          = ./galaxy_roles:./roles
 ```
 
 ```bash
+# install the roles
 $ ansible-galaxy install \
   --role-file=requirements.yml \
   --roles-path=galaxy_roles
+
 # with shortcuts for options
 $ ansible-galaxy install -r=requirements.yml -p=galaxy_roles
 ```
@@ -243,7 +294,6 @@ $ ansible-galaxy install -r=requirements.yml -p=galaxy_roles
 - [galacy cli docs](http://docs.ansible.com/ansible/galaxy.html#installing-multiple-roles-from-a-file)
 
 ---
-
 ## Create a new role with `ansible-galaxy`
 
 ```bash
@@ -278,6 +328,7 @@ $ ansible-galaxy init --init-path=roles/ --offline my_new_role
 ------
 # Variable naming schema
 
+---
 ```yaml
 myrole_variable: foobar
 ```
@@ -296,6 +347,7 @@ user_home: "/home/{{ user_name }}"
 ------
 # Using variable from another role
 
+---
 ```yaml
 # roles/user/defaults/main.yml
 user_home: /home/my_user
@@ -307,18 +359,21 @@ zsh_user_home: "{{ user_home }}"
 ```
 
 *Info*:
-- Do not directly rely on varibles from another role.
-- "Import" the variable in you `defaults/main.yml`
-- The goal is, that all tasks in a role depend only on variables, that are defined in that role!
+- In your tasks, do not rely on variables from another role.
+- "Import" the variable in you `defaults/main.yml`.
 
 ------
 # `defaults` vs `vars`
 
 ---
+## defaults
 
-`defaults`: Can savely be overwritten by the user
+- Configuration, you expose to the user.
 
-`vars`: User should not have contact with this.
+## vars
+
+- Configuration inside the role
+- Typically environment specific & loaded by facts
 
 ---
 ## Vars example
@@ -352,7 +407,6 @@ There is a lot of hazzle about the `become` directive, most tareting its, in fir
 And yes, it may look strange to say `become: yes` to execute something with root privileges. 
 
 ---
-
 ## become another user?: Yes
 
 ---
@@ -370,12 +424,13 @@ And yes, it may look strange to say `become: yes` to execute something with root
 # Places to configure `become`
 
 ---
-
 ## At task level
 
 ```yaml
 - name: install some packages
   become: true
+  become_user: root
+  become_method: sudo
   package:
     name: aweseome
     state: latest
@@ -387,7 +442,12 @@ And yes, it may look strange to say `become: yes` to execute something with root
 ```yaml
 - include: install_packages.yml
   become: true
+  become_user: root
+  become_method: sudo
 ```
+
+*Info*:
+- Will set `become: true` for all tasks in the includes file.
 
 ---
 ## At Role includes in playbook
@@ -397,13 +457,23 @@ And yes, it may look strange to say `become: yes` to execute something with root
   roles:
     - role: myrole
       become: true
+      become_user: root
+      become_method: sudo
 ```
+
+*Info*:
+- Will set `become: true` for the entire role.
+- But NOT for handlers. Seems to be a bug. Solution: Add `become: true` for handler tasks.
 
 ---
 ## At the command line
 
 ```bash
-$ ansible-playbook -K --become site.yml
+$ ansible-playbook --become \
+    --become-user=root \
+    --become-method=sudo  \
+    --ask-become-pass \
+    site.yml
 ```
 
 *Info*:
@@ -411,7 +481,6 @@ Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With
 [`become` in the docs](http://docs.ansible.com/ansible/become.html)
 
 ------
-
 # Role include parameters
 
 ```yaml
@@ -420,12 +489,11 @@ Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With
   roles:
       # simple role include
     - myrole
-      # set `become` for entire role
-    - role: somerole
-      become: true
+
       # set role defaults value
     - role: someotherrole
       myrole_var: foobar
+
       # and call the same role twice
     - role: someotherrole
       myrole_var: notfoo
@@ -442,10 +510,16 @@ Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With
 ```yaml
 # roles/myrole/meta/main.yml
 dependencies:
-  - somerole # simple
-  - role: aur # with parameters
+  # simple
+  - somerole
+
+  # with parameters
+  - role: aur 
     pkg_name: thinkfan
 ```
+
+*Info*:
+- Same as role includes in playbook ;)
 
 ---
 ## Be careful with dependencies and role options
@@ -456,6 +530,7 @@ dependencies:
   roles:
     - role: myrole
       tags: [myrole]
+
     - role: myotherrole
       tags: [myotherrole]
 ```
@@ -471,9 +546,10 @@ With this, `myrole` will be executed twice. First time from the playbook, with t
 [Role dependencies in the docs](http://docs.ansible.com/ansible/playbooks_roles.html#role-dependencies)
 
 ------
-# A module to notice
-## `include_role` module
+# `include_role` module
+## A module to notice
 
+---
 ```yaml
 - name: include a role at task level
   include_role:
@@ -527,7 +603,7 @@ With this, `myrole` will be executed twice. First time from the playbook, with t
 *Info*: 
 `item` is available in templates.
 
-------
+---
 ## Looping dictionaries in Jinja2
 
 ```jinja
@@ -544,7 +620,7 @@ Don't use them. Use `include`s instead.
 *Info*:
 - the idea of block is, to group tasks and apply some directives at a single point.
 - Blocks can't be looped, what's sad, really sad.
-- Blocks introduce strange, not intuitive conventions, intendention, etcs
+- Blocks introduce strange, not intuitive conventions, intendention, etc.
 - [Block in the docs](http://docs.ansible.com/ansible/playbooks_blocks.html)
 
 ------
@@ -557,7 +633,7 @@ Use `delegate_to` to execute the task on another machine than the current.
 - name: add host to hostsfile
   lineinfile:
     dest: /etc/hosts
-    line: "{{ ansible_eth1.ipv4.address}} {{ inventory_hostname }}"
+    line: "{{ ansible_default_ipv4.address }} {{ inventory_hostname }}"
   delegate_to: 127.0.0.1
 ```
 
@@ -565,9 +641,10 @@ Use `delegate_to` to execute the task on another machine than the current.
 [Delegation in the docs](http://docs.ansible.com/ansible/playbooks_delegation.html#delegation)
 
 ------
-# A module to notice
-## `add_host` module
+# `add_host` module
+## A module to notice
 
+---
 ```yaml
 - name: ensure user and get information
   user:
@@ -588,7 +665,7 @@ Use `delegate_to` to execute the task on another machine than the current.
 ```
 
 ---
-## `add_host` will survive `host`-sections in playbooks
+## `add_host` will survive `hosts`-sections in playbooks
 ```yaml
 - hosts: localhost
   tasks:
@@ -597,34 +674,24 @@ Use `delegate_to` to execute the task on another machine than the current.
 
     - add_host:
         name: "{{ item.public_ip }}"
-        group: my_ec2
+        group: my_ec2   # <- notice the groupname
       with_items: "{{ ec2.tagged_instances }}"
 
     - wait_for: host="{{ item.public_dns_name }}" port=22
       with_items: "{{ ec2.tagged_instances }}"
 
-- hosts: my_ec2
+- hosts: my_ec2   # <- we use the groupname from above
   roles:
     - role: some_role
 ```
 
 *Info*:
-- Note the `group` option at the `add_host` module. We reuse this groupname at the second play part.
 - [`add_host` in the docs](http://docs.ansible.com/ansible/add_host_module.html)
 
 ------
 # `register`
 
-```yaml
-- name: ensure user 
-  user:
-    name: ko
-    generate_ssh_key: true
-  register: user_info
-
-- debug: var=user_info
-```
-
+---
 ```yaml
 - name: get file infos
   stat:
@@ -634,9 +701,99 @@ Use `delegate_to` to execute the task on another machine than the current.
 - debug: var=file_info
 ```
 
+```json
+{
+    "file_info": {
+        "changed": false,
+        "stat": {
+            "atime": 1485083552.0,
+            "attr_flags": "",
+            "attributes": [],
+            "birthtime": 1462644637.0,
+            "block_size": 4096,
+            "blocks": 8,
+            "charset": "unknown",
+            "checksum": "e739cd3bdf5395fd8bf7cd6b1b71b4b5dc1ffa58",
+            "ctime": 1482073380.0,
+            "dev": 16777217,
+            "device_type": 0,
+            "executable": false,
+            "exists": true,
+            "flags": 0,
+            "generation": 0,
+            "gid": 20,
+            "gr_name": "staff",
+            "inode": 6835479,
+            "isblk": false,
+            "ischr": false,
+            "isdir": false,
+            "isfifo": false,
+            "isgid": false,
+            "islnk": false,
+            "isreg": true,
+            "issock": false,
+            "isuid": false,
+            "md5": "6953afbf691e7a58f4bdb481f92d18fa",
+            "mimetype": "unknown",
+            "mode": "0644",
+            "mtime": 1482073380.0,
+            "nlink": 1,
+            "path": "/Users/ko/.zshrc",
+            "pw_name": "ko",
+            "readable": true,
+            "rgrp": true,
+            "roth": true,
+            "rusr": true,
+            "size": 379,
+            "uid": 501,
+            "version": null,
+            "wgrp": false,
+            "woth": false,
+            "writeable": true,
+            "wusr": true,
+            "xgrp": false,
+            "xoth": false,
+            "xusr": false
+        }
+    }
+```
+
+
+---
+```yaml
+- name: ensure user 
+  user:
+    name: myself
+    generate_ssh_key: true
+  register: user_info
+
+- debug: var=user_info
+```
+
+```json
+{
+    "user_info": {
+        "append": false,
+        "changed": false,
+        "comment": "",
+        "group": 100,
+        "home": "/home/myself",
+        "move_home": false,
+        "name": "myself",
+        "shell": "/bin/zsh",
+        "ssh_fingerprint": "2048 SHA256:G[...]A ansible-generated (RSA)",
+        "ssh_key_file": "/home/myself/.ssh/id_rsa",
+        "ssh_public_key": "ssh-rsa AA[...]bF ansible-generated",
+        "state": "present",
+        "uid": 1000
+    }
+}
+```
+
 *Info*:
-A LOT modules provide infos into the `register` directive. Just try it!
-[`register`in the docs](http://docs.ansible.com/ansible/playbooks_variables.html#registered-variables)
+- A LOT modules support the `register` directive. Just try it!
+- Output may depend on what you've set up in the registering task
+- [`register` in the docs](http://docs.ansible.com/ansible/playbooks_variables.html#registered-variables)
 
 ------
 # `set_fact` module
@@ -649,6 +806,15 @@ A LOT modules provide infos into the `register` directive. Just try it!
 
 - debug: var=some_fact
 - debug: var=a_fact
+```
+
+```json
+{
+    "some_fact": "foobar"
+}
+{
+    "a_fact": "bazbar"
+}
 ```
 
 *Info*:
@@ -671,11 +837,11 @@ A LOT modules provide infos into the `register` directive. Just try it!
 ```
 
 *Info*: 
-[`from_yaml`&`from_json` in the docs](http://docs.ansible.com/ansible/playbooks_filters.html#filters-for-formatting-data)
+[`from_yaml` & `from_json` in the docs](http://docs.ansible.com/ansible/playbooks_filters.html#filters-for-formatting-data)
 
 ------
-# A module to notice
-## `deploy_helper` module
+# `deploy_helper` module
+## A module to notice
 
 ---
 ### We want this
@@ -788,7 +954,7 @@ will result in this:
 
 *Info*:
 Note, that the `UNFINISHEDFILE` is absent!
-[`deploy_helper` modul ein the docs](http://docs.ansible.com/ansible/deploy_helper_module.html)
+[`deploy_helper` module in the docs](http://docs.ansible.com/ansible/deploy_helper_module.html)
 
 
 ------
@@ -803,13 +969,13 @@ Note, that the `UNFINISHEDFILE` is absent!
 ```
 
 *Info*: 
-- `run_once`, obvisiosly run every playbook run ;)
+- `run_once`, obviously run every playbook run ;)
 - [`run_once` in the docs](http://docs.ansible.com/ansible/playbooks_delegation.html#run-once)
 
 ------
 # Tip about services and handlers
 
-- In tasks: Configure service, enable them, etc. But do not restart them!
+- In tasks: Configure service, enable them, etc., but do not restart them!
 - In Handlers: just only restart services.
 
 *Info*:
