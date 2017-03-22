@@ -46,7 +46,7 @@ Just do it!
 - will lead to better output and a possibility to search for a (failing) step name in your scripts.
 
 ------
-# The Inventory
+# Set up your project
 
 Keep your inventory in your SCM.
 
@@ -54,16 +54,24 @@ Keep your inventory in your SCM.
 - but keep sensitive data out of the repository ;)
 
 ---
-## Use IPs and grouping
+## Inventory: 
+
+### Use IPs and group your hosts
 
 ```ini
+[cid]
 cid.ko ansible_host=192.168.178.23
+cid.dev ansible_host=192.168.3.23
+
+[aerith]
 aerith.ko ansible_host=192.168.178.24
+
+[cloud]
 cloud.ko ansible_host=192.168.178.25
 
-[arch]
-cid.ko
-cloud.ko
+[arch:children]
+cid
+cloud
 
 [arch:vars]
 ansible_python_interpreter=/usr/bin/python2
@@ -77,6 +85,7 @@ ansible_python_interpreter=/usr/bin/python2
 
 ---
 ## Simple directory layout
+### (from best practices)
 
 ```
 .
@@ -105,7 +114,8 @@ $ ansible-playbook site.yml
 - nice, when you only need one inventory file
 
 ---
-## Advanced directory layout
+## Advanced directory layout 
+### (from best practices)
 
 ```
 ├── ansible.cfg
@@ -130,22 +140,45 @@ $ ansible-playbook -i inventory/staging/hosts site.yml
 - For groups of hosts
 - [Directory layouts in best pratices guide](http://docs.ansible.com/ansible/playbooks_best_practices.html#directory-layout)
 
+---
+## The layer between
+### (result of my experience)
+
+```
+├── ansible.cfg
+├── inventory
+│   ├── group_vars
+│   │   ├── all.yml    <- Vars for all hosts
+│   │   ├── aerith.yml
+│   │   ├── cid.yml
+│   │   ├── cloud.yml
+│   │   └── prod.yml
+│   ├── host_vars
+│   │   └── aerith.ko.yml
+│   ├── prod           <- inventory for "prod"
+│   ├── dev            <- and for "dev"
+│   └── test           <- you know what this is..
+├── roles
+│   └── my_role
+└── site.yml
+```
+
+```bash
+$ ansible-playbook -i inventory/dev site.yml
+```
+
+*Info*: 
+- Combines seperate inventory files and grouped vars files
+- May be unhandy, with all the group files in one directory. So, it does not scale to very large environments.
+
 ------
 # The `ansible-playbook` command
 
 ---
-## General useful options
-
-- `--flush-cache` clear the fact cache (KEEP THIS IN MIND!!)
-- `--step` run tasks step by step, each step must be confirmed
-- `-C`/`--check` makes a "dry-run" without changing anything.
-- `--syntax-check` linter
-
----
 ## Configure ansible
 
-- `-i INVENTORY`/`--inventory-file=INVENTORY` specify the inventory file
-- `-e EXTRA_VARS`/`--extra-vars=EXTRA_VARS` allows you to specify/overwrite variables for the playbook run.
+- `-i INVENTORY`/`--inventory-file=INVENTORY`: specify the inventory file
+- `-e EXTRA_VARS`/`--extra-vars=EXTRA_VARS`: allows you to specify/overwrite variables for the playbook run.
 
 ---
 ### `--extra-vars`/`-e` example
@@ -167,18 +200,29 @@ ansible-playbook site.yml
 ---
 ## Do not execute everything
 
-- `-t TAGS`/`--tags=TAGS` only run plays and tasks tagged with these values
-- `--skip-tags=SKIP_TAGS` skip the given tags
-- `--start-at-task=START_AT_TASK` starts at the task with the given name
-- `-l SUBSET`/`--limit=SUBSET` limit to a subset of hosts
+- `-t TAGS`/`--tags=TAGS`: only run plays and tasks tagged with these values
+- `--skip-tags=SKIP_TAGS`: skip the given tags
+- `--start-at-task=START_AT_TASK`: starts at the task with the given name
+- `-l SUBSET`/`--limit=SUBSET`: limit to a subset of hosts
 
 ---
 ## Set connection options
 
-- `-k`/`--ask-pass`      ask for connection password
--  `-u REMOTE_USER`/`--user=REMOTE_USER` connect as this user
-- `--private-key=PRIVATE_KEY_FILE`/`--key-file=PRIVATE_KEY_FILE` give the private key file
-- `-K`/`--ask-become-pass` ask for privilege escalation password. 
+- `-k`/`--ask-pass`: ask for connection password
+-  `-u REMOTE_USER`/`--user=REMOTE_USER`: connect as this user
+- `--private-key=PRIVATE_KEY_FILE`/`--key-file=PRIVATE_KEY_FILE`: give the private key file
+- `-K`/`--ask-become-pass`: ask for privilege escalation password. 
+
+*Info*: 
+- `-k` Option is very usefull for passwords, you only need once
+
+---
+## General useful options
+
+- `--flush-cache`: clear the fact cache (KEEP THIS IN MIND!!)
+- `--step`: run tasks step by step, each step must be confirmed
+- `-C`/`--check`: makes a "dry-run" without changing anything.
+- `--syntax-check`: linter
 
 ------
 # Use "real" yaml syntax instead of inline style
@@ -198,7 +242,7 @@ ansible-playbook site.yml
 - Is more readable ;)
 - Allows you to add/remove options by lines (git will thank you)
 - Drawback: You have to add `"` around `{{ variables }}`
-- Did you see the `validate`?
+- Hint: Did you see the `validate`? ;)
 
 ------
 # Getting started/Initialize a new host
@@ -276,7 +320,7 @@ Create tokens at [github.com/settings/tokens](https://github.com/settings/tokens
 ```ini
 # ansible.cfg
 [defaults]
-roles_path          = ./galaxy_roles:./roles
+roles_path = ./galaxy_roles:./roles
 ```
 
 ```bash
@@ -285,13 +329,13 @@ $ ansible-galaxy install \
   --role-file=requirements.yml \
   --roles-path=galaxy_roles
 
-# with shortcuts for options
+# does the same, but with shortcuts for options
 $ ansible-galaxy install -r=requirements.yml -p=galaxy_roles
 ```
 
 *Info*:
 - Add galaxy role path to `.gitignore`.
-- [galacy cli docs](http://docs.ansible.com/ansible/galaxy.html#installing-multiple-roles-from-a-file)
+- [galaxy cli docs](http://docs.ansible.com/ansible/galaxy.html#installing-multiple-roles-from-a-file)
 
 ---
 ## Create a new role with `ansible-galaxy`
@@ -329,10 +373,18 @@ $ ansible-galaxy init --init-path=roles/ --offline my_new_role
 # Variable naming schema
 
 ---
+
+## This looks good, but...
+
 ```yaml
-myrole_variable: foobar
+user:
+  name: my_user
+  home: /home/my_user
+
 ```
 ---
+
+## ... this does the job better
 
 ```yaml
 user_name: my_user
@@ -342,10 +394,10 @@ user_home: "/home/{{ user_name }}"
 *Info*:
 - Prefix your variable names with the role name.
 - Do NOT use `hash_behavior=merge`, and "nested" variables, even if it looks sexy on the first time.
-    + this allows you to reuse variables:
+    + this allows you to reuse variables.
 
 ------
-# Using variable from another role
+# Using variables from another role
 
 ---
 ```yaml
@@ -368,12 +420,16 @@ zsh_user_home: "{{ user_home }}"
 ---
 ## defaults
 
-- Configuration, you expose to the user.
+- Configuration, you expose to the user
+- Some kind of "arguments", you can use for the role
+- "public"
+---
 
 ## vars
 
 - Configuration inside the role
 - Typically environment specific & loaded by facts
+- "private"
 
 ---
 ## Vars example
@@ -402,9 +458,9 @@ ssh_service_name: sshd
 # `become: true`
 
 *Info*:
-There is a lot of hazzle about the `become` directive, most tareting its, in first case, uncommon naming.
+There is a lot of hazzle about the `become` directive, most targeting its, in first case, uncommon naming.
 
-And yes, it may look strange to say `become: yes` to execute something with root privileges. 
+And yes, it may look strange to say `become: true` to execute something with root privileges. 
 
 ---
 ## become another user?: Yes
@@ -472,12 +528,13 @@ And yes, it may look strange to say `become: yes` to execute something with root
 $ ansible-playbook --become \
     --become-user=root \
     --become-method=sudo  \
-    --ask-become-pass \
+    --ask-become-pass \  # <-- Remember this option
     site.yml
 ```
 
 *Info*:
-Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With this, ansible will ask your for the password to become the other user (Which password may depend on the `become-method`.)
+You can shortcut the `--aks-become-pass` option with `-K` (upper "K")
+With this, ansible will ask your for the password to become the other user (Which password may depend on the `become-method`.)
 [`become` in the docs](http://docs.ansible.com/ansible/become.html)
 
 ------
@@ -507,6 +564,11 @@ Note the `-K` (upper "K") flag, that is a shortcut for `--aks-become-pass`. With
 ------
 # Role dependencies
 
+---
+
+Define role dependencies in the `meta/main.yml` file of your role
+
+---
 ```yaml
 # roles/myrole/meta/main.yml
 dependencies:
@@ -556,6 +618,19 @@ With this, `myrole` will be executed twice. First time from the playbook, with t
     name: myrole
   vars:
     myrole_var: foobar
+```
+
+*Info*:
+[`include_role` in the docs](http://docs.ansible.com/ansible/include_role_module.html)
+
+---
+## You don't need to use the `main.yml`
+
+```yaml
+- name: include a role at task level
+  include_role:
+    name: myrole
+    tasks_from: deploy.yml
 ```
 
 *Info*:

@@ -1,21 +1,22 @@
 # Welcome!
 
-`#sfugcgn`
+`#sfugbln`
 
 ---
 # What happend today
 
-## 25. Jan. 2017
+## 22. Mar. 2017
 
-- It's Vogelhochzeit and Burns Supper.
+- It's World Water Day!
 
-- Robert Burns, author of "Auld Lang Syne" would have his 258. birthday.
+- It's 235 years now, that Johann Wolfgang von Goethe is dead.
 
-- 136 ago, Thomas Edison and Alexander Graham Bell formed the Oriental Telephone Company.
+- The Beatles published their first studio album ("Please Please Me") 54 years ago.
 
-- Happy 62. birthday to Terry Chimes, the original drummer of "The Clash"
+- 82 Years ago, the worlds first regular tv program was sent from the "Funkturm Berlin"
+
+- Happy 86. Birthday to William Shattner.
 
 *Info*:
-- Name days: Paul, Tatjana, Wolfram
-    
----
+- Name days: Elmar, Lea
+
